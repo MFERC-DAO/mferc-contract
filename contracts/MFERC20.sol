@@ -5,9 +5,9 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract MFERC20 is ERC20 {
     constructor(
-        string _name,
-        string _symbol
+        string memory _name,
+        string memory _symbol
     ) ERC20(_name, _symbol) {
-        _mint(msg.sender, 10000000 ether)
+        _mint(msg.sender, 100000000 ether);
     }
 }

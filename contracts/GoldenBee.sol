@@ -5,40 +5,32 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/ERCRoyalty.sol";
-import "./Interface/ArbSys.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Royalty.sol";
+import "@openzeppelin/contracts/token/common/ERC2981.sol";
+import "@openzeppelin/contracts/vendor/arbitrum/IArbSys.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-/**
- * @title NFTContract - 用于创建NFT的智能合约
- * @dev 此合约继承了 ERC721Enumerable 和 Ownable 合约
- */
-contract GoldenBee is ERC721Enumerable, ERCRoyalty, Ownable {
+contract GoldenBee is ERC721Enumerable, ERC2981, ReentrancyGuard, Ownable {
     using Counters for Counters.Counter;
     Counters.Counter private _tokenIdCounter;
 
-    address public mfercTokenAddress; // $MFERC 代币合约地址
-    uint256 public mintFee = 1000000 ether; // 铸造一个 NFT 所需的 $MFERC 代币数量
+    address public mfercTokenAddress; // $MFERC token
+    uint256 public mintFee = 1000000 ether; // the price of golden bee
     address public royaltyReceiver; // Royalty receiver address
-    uint256 public royaltyPercentage = 500; // 5% 版税
-    string private _baseTokenURI; // NFT 元数据的基本 URI
-    address immutable BlackHole = "0x000000000000000000000000000000000000dEaD";
+    uint96 public royaltyPercentage = 500; // 5% royalty
+    string private _baseTokenURI; // NFT base uri
+    address immutable BlackHole = 0x000000000000000000000000000000000000dEaD;
     uint256 immutable public maxSupply = 6666;
     // this array stores the pictures uri those not been minted;
     string[] public pendingPics;
     // total burned mferc
     uint256 public totalBurned;
 
-    // 存储每个NFT的元数据URI
+    // mapping token id to token uri
     mapping(uint256 => string) private _tokenURIs;
 
-    /**
-     * @dev 合约构造函数
-     * @param name NFT的名称
-     * @param symbol NFT的符号
-     * @param _mfercTokenAddress $MFERC 代币合约地址
-     * @param _royaltyReceiver 收取铸造费用的地址
-     * @param baseTokenURI NFT元数据的基本URI
-     */
+    event MintNFT(address indexed owner, uint256 indexed tokenId);
+
     constructor(
         string memory name,
         string memory symbol,
@@ -53,33 +45,16 @@ contract GoldenBee is ERC721Enumerable, ERCRoyalty, Ownable {
     }
 
     /**
-     * @dev 设置铸造费用
-     * @param _fee 新的铸造费用数量
-     */
-    function setMintFee(uint256 _fee) external onlyOwner {
-        mintFee = _fee;
-    }
-
-    /**
-     * @dev 设置版税比例
-     * @param _percentage 新的版税比例
-     */
-    function setRoyaltyPercentage(uint256 _percentage) external onlyOwner {
-        royaltyPercentage = _percentage;
-    }
-
-    /**
-     * @dev 设置NFT元数据的基本URI
-     * @param baseTokenURI 新的基本URI
+     * @dev set base uri
+     * @param baseTokenURI new base uri
      */
     function setBaseTokenURI(string memory baseTokenURI) external onlyOwner {
         _baseTokenURI = baseTokenURI;
     }
 
     /**
-     * @dev 批量为多个NFT设置元数据URI，仅限管理员操作
-     * @param tokenIds NFT的ID数组
-     * @param tokenURIs 对应的NFT元数据URI数组
+     * @dev add new pics to contract, only owner can add new pics
+     * user can mint NFT if there exists pending pics
      */
     function batchAddTokenURIs(string[] calldata tokenURIs) external onlyOwner {
         for (uint256 i = 0; i < tokenURIs.length; i++) {
@@ -88,40 +63,56 @@ contract GoldenBee is ERC721Enumerable, ERCRoyalty, Ownable {
     }
 
     /**
-     * @dev 获取指定NFT的元数据URI
-     * @param tokenId NFT的ID
-     * @return 完整的NFT元数据URI
+     * @dev get uri of a token id
+     * @param tokenId NFT ID
+     * @return 
      */
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
         require(_exists(tokenId), "NFT not exists");
-        return bytes(_tokenURIs[tokenId]).length > 0 ? _tokenURIs[tokenId] : _baseTokenURI;
+        return bytes(_tokenURIs[tokenId]).length > 0 
+                ? string(abi.encodePacked(_baseTokenURI, _tokenURIs[tokenId])) 
+                : _baseTokenURI;
     }
 
     function setDefaultRoyalty(address receiver, uint96 feeNumerator) public onlyOwner {
         _setDefaultRoyalty(receiver, feeNumerator);
     }
 
-    function mintNFT() public {
+    function mintNFT() nonReentrant public {
         require(IERC20(mfercTokenAddress).balanceOf(msg.sender) >= mintFee, "Insufficient balance");
-        require(pendingNFT() > 0, "No NFT to mint");
+        require(pendingNFTLength() > 0, "No NFT to mint");
+        _tokenIdCounter.increment();
         uint256 tokenId = _tokenIdCounter.current();
         require(
-            IERC20(mfercTokenAddress).transferFrom(msg.seconds, BlackHole, mintFee),
+            IERC20(mfercTokenAddress).transferFrom(msg.sender, BlackHole, mintFee),
             "Burn MFERC fail"
         );
         _mint(msg.sender, tokenId);
         totalBurned += mintFee;
-        _tokenIdCounter.increment();
 
         // todo set a random bee
+        uint256 randomIndex = blockNum() % pendingNFTLength();
+        _tokenURIs[tokenId] = pendingPics[randomIndex];
+        pendingPics[randomIndex] = pendingPics[pendingPics.length - 1];
+        pendingPics.pop();
+        
+        emit MintNFT(msg.sender, tokenId);
     }
 
-    function pendingNFT() public view returns (uint256) {
+    function pendingNFTLength() public view returns (uint256) {
         return pendingPics.length;
     }
 
     function blockNum() public view returns (uint256) {
-        return ArbSys(address(100)).arbBlockNumber();
+        // for test
+        return block.number;
+        return IArbSys(address(100)).arbBlockNumber();
     }
 
+    /**
+     * @dev See {IERC165-supportsInterface}.
+     */
+    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC2981, ERC721Enumerable) returns (bool) {
+        return super.supportsInterface(interfaceId);
+    }
 }
