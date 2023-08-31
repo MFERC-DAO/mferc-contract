@@ -10,7 +10,7 @@ const TestUris = ['test1', 'test2', 'test3'];
 const TestBaseUri = "https://test/";
 
 describe("GoldenBee", function () {
-  
+
   async function deployOneYearLockFixture() {
     // Contracts are deployed using the first signer/account by default
     const [owner, otherAccount, royaltyReceiver] = await ethers.getSigners();
@@ -48,7 +48,7 @@ describe("GoldenBee", function () {
 
   describe("Mint", function () {
     describe("Validations", function () {
-      it("Should fail if there is no NFT to mint", async function() {
+      it("Should fail if there is no NFT to mint", async function () {
         const { mferc, goldenBee, owner } = await loadFixture(deployOneYearLockFixture);
         await mferc.approve(goldenBee.address, "100000000000000000000000000");
         await expect(goldenBee.mintNFT()).to.be.revertedWith(
@@ -78,7 +78,7 @@ describe("GoldenBee", function () {
         );
       });
 
-      it("Everyone can mint a NFT", async function() {
+      it("Everyone can mint a NFT", async function () {
         const { mferc, goldenBee, owner, otherAccount } = await loadFixture(deployOneYearLockFixture);
         await mferc.transfer(otherAccount.address, "10000000000000000000000000");
         await mferc.connect(otherAccount).approve(goldenBee.address, "100000000000000000000000000");
@@ -87,7 +87,7 @@ describe("GoldenBee", function () {
         await expect(goldenBee.connect(otherAccount).mintNFT()).not.to.be.reverted;
       });
 
-      it("Everyone can mint more than one NFT", async function() {
+      it("Everyone can mint more than one NFT", async function () {
         const { mferc, goldenBee, owner, otherAccount } = await loadFixture(deployOneYearLockFixture);
         await mferc.transfer(otherAccount.address, "10000000000000000000000000");
         await mferc.connect(otherAccount).approve(goldenBee.address, "100000000000000000000000000");
@@ -97,7 +97,7 @@ describe("GoldenBee", function () {
         await expect(goldenBee.connect(otherAccount).mintNFT()).not.to.be.reverted;
       })
 
-      it("The NFT uri should be shuffle", async function() {
+      it("The NFT uri should be shuffle", async function () {
         const { mferc, goldenBee, owner, otherAccount } = await loadFixture(deployOneYearLockFixture);
         await mferc.transfer(otherAccount.address, "10000000000000000000000000");
         await mferc.connect(otherAccount).approve(goldenBee.address, "100000000000000000000000000");
@@ -131,17 +131,17 @@ describe("GoldenBee", function () {
     });
   });
 
-  describe("Ownable function", function() {
-    it("Set base uri", async function() {
+  describe("Ownable function", function () {
+    it("Set base uri", async function () {
       const { mferc, goldenBee, owner, otherAccount } = await loadFixture(deployOneYearLockFixture);
       await expect(goldenBee.setBaseTokenURI("base url")).not.to.be.reverted;
 
       await expect(goldenBee.connect(otherAccount).setBaseTokenURI("base url")).to.be.revertedWith(
         "Ownable: caller is not the owner"
-      )
+      );
     });
 
-    it("batchAddTokenURIs", async function() {
+    it("batchAddTokenURIs", async function () {
       const { mferc, goldenBee, owner, otherAccount } = await loadFixture(deployOneYearLockFixture);
       await expect(goldenBee.batchAddTokenURIs(TestUris)).not.to.be.reverted;
 
@@ -150,7 +150,7 @@ describe("GoldenBee", function () {
       )
     });
 
-    it("setDefaultRoyalty", async function() {
+    it("setDefaultRoyalty", async function () {
       const { mferc, goldenBee, owner, otherAccount, royaltyReceiver } = await loadFixture(deployOneYearLockFixture);
       await expect(goldenBee.setDefaultRoyalty(royaltyReceiver.address, 1000)).not.to.be.reverted;
 
@@ -159,7 +159,7 @@ describe("GoldenBee", function () {
       await expect(goldenBee.connect(otherAccount).setDefaultRoyalty(royaltyReceiver.address, 1000)).to.be.revertedWith(
         "Ownable: caller is not the owner"
       )
-    })
+    });
   });
 
   describe("Transfers", function () {
@@ -173,7 +173,7 @@ describe("GoldenBee", function () {
       await expect(goldenBee.connect(otherAccount).transferFrom(otherAccount.address, owner.address, 1)).not.to.be.reverted;
     });
 
-    it("Should revert if user not the owner of NFT when he transfer it", async function() {
+    it("Should revert if user not the owner of NFT when he transfer it", async function () {
       const { mferc, goldenBee, owner, otherAccount, royaltyReceiver } = await loadFixture(deployOneYearLockFixture);
       await mferc.transfer(otherAccount.address, "10000000000000000000000000");
       await mferc.connect(otherAccount).approve(goldenBee.address, "100000000000000000000000000");
@@ -183,31 +183,31 @@ describe("GoldenBee", function () {
       await expect(goldenBee.transferFrom(otherAccount.address, owner.address, 1)).to.be.revertedWith(
         "ERC721: caller is not token owner or approved"
       );
-    })
+    });
   });
 
   describe("ERC165", function () {
     //0x80ac58cd
-    it("Should support ERC721 interface", async function() {
+    it("Should support ERC721 interface", async function () {
       const { goldenBee } = await loadFixture(deployOneYearLockFixture);
       expect(await goldenBee.supportsInterface("0x80ac58cd")).to.be.true;
     });
 
     // 0x2a55205a
-    it("Should support ERC2581 interface", async function() {
+    it("Should support ERC2581 interface", async function () {
       const { goldenBee } = await loadFixture(deployOneYearLockFixture);
       expect(await goldenBee.supportsInterface("0x2a55205a")).to.be.true;
     });
 
     // 0x780e9d63
-    it("Should support ERC721Enumerable interface", async function() {
+    it("Should support ERC721Enumerable interface", async function () {
       const { goldenBee } = await loadFixture(deployOneYearLockFixture);
       expect(await goldenBee.supportsInterface("0x780e9d63")).to.be.true;
     });
   });
 
-  describe("ERC721Enumerable", function() {
-    it("Should return right total supply", async function() {
+  describe("ERC721Enumerable", function () {
+    it("Should return right total supply", async function () {
       const { mferc, goldenBee, owner, otherAccount, royaltyReceiver } = await loadFixture(deployOneYearLockFixture);
       await mferc.transfer(otherAccount.address, "10000000000000000000000000");
       await mferc.connect(otherAccount).approve(goldenBee.address, "100000000000000000000000000");
@@ -219,7 +219,7 @@ describe("GoldenBee", function () {
       expect(await goldenBee.totalSupply()).to.be.equals(2);
     });
 
-    it("Should match the right token id of a user", async function() {
+    it("Should match the right token id of a user", async function () {
       const { mferc, goldenBee, owner, otherAccount, royaltyReceiver } = await loadFixture(deployOneYearLockFixture);
       await mferc.transfer(otherAccount.address, "10000000000000000000000000");
       await mferc.connect(otherAccount).approve(goldenBee.address, "100000000000000000000000000");
@@ -235,7 +235,7 @@ describe("GoldenBee", function () {
       );
     });
 
-    it("Should revert if call the index out of user's balance", async function() {
+    it("Should revert if call the index out of user's balance", async function () {
       const { mferc, goldenBee, owner, otherAccount, royaltyReceiver } = await loadFixture(deployOneYearLockFixture);
       await mferc.transfer(otherAccount.address, "10000000000000000000000000");
       await mferc.connect(otherAccount).approve(goldenBee.address, "100000000000000000000000000");
