@@ -125,8 +125,8 @@ describe("GoldenBee", function () {
         await mine(1);
         await expect(goldenBee.connect(otherAccount).mintNFT()).not.to.be.reverted;
 
-        await expect(goldenBee.connect(otherAccount).mintNFT()).to.emit(goldenBee, "MintNFT")
-          .withArgs(otherAccount.address, 2);
+        await expect(goldenBee.connect(otherAccount).mintNFT()).to.emit(goldenBee, "Transfer")
+          .withArgs('0x0000000000000000000000000000000000000000', otherAccount.address, 2);
       });
     });
   });
@@ -207,6 +207,44 @@ describe("GoldenBee", function () {
   });
 
   describe("ERC721Enumerable", function() {
+    it("Should return right total supply", async function() {
+      const { mferc, goldenBee, owner, otherAccount, royaltyReceiver } = await loadFixture(deployOneYearLockFixture);
+      await mferc.transfer(otherAccount.address, "10000000000000000000000000");
+      await mferc.connect(otherAccount).approve(goldenBee.address, "100000000000000000000000000");
+      await goldenBee.batchAddTokenURIs(TestUris);
+      await mine(1);
+      await expect(goldenBee.connect(otherAccount).mintNFT()).not.to.be.reverted;
+      await expect(goldenBee.connect(otherAccount).transferFrom(otherAccount.address, owner.address, 1)).not.to.be.reverted;
+      await expect(goldenBee.connect(otherAccount).mintNFT()).not.to.be.reverted;
+      expect(await goldenBee.totalSupply()).to.be.equals(2);
+    });
 
+    it("Should match the right token id of a user", async function() {
+      const { mferc, goldenBee, owner, otherAccount, royaltyReceiver } = await loadFixture(deployOneYearLockFixture);
+      await mferc.transfer(otherAccount.address, "10000000000000000000000000");
+      await mferc.connect(otherAccount).approve(goldenBee.address, "100000000000000000000000000");
+      await goldenBee.batchAddTokenURIs(TestUris);
+      await mine(1);
+      await expect(goldenBee.connect(otherAccount).mintNFT()).not.to.be.reverted;
+      await expect(goldenBee.connect(otherAccount).transferFrom(otherAccount.address, owner.address, 1)).not.to.be.reverted;
+      await expect(goldenBee.connect(otherAccount).mintNFT()).not.to.be.reverted;
+      expect(await goldenBee.tokenOfOwnerByIndex(owner.address, 0)).to.be.equals(1);
+      expect(await goldenBee.tokenOfOwnerByIndex(otherAccount.address, 0)).to.be.equals(2);
+      await expect(goldenBee.tokenOfOwnerByIndex(owner.address, 1)).to.be.revertedWith(
+        "ERC721Enumerable: owner index out of bounds"
+      );
+    });
+
+    it("Should revert if call the index out of user's balance", async function() {
+      const { mferc, goldenBee, owner, otherAccount, royaltyReceiver } = await loadFixture(deployOneYearLockFixture);
+      await mferc.transfer(otherAccount.address, "10000000000000000000000000");
+      await mferc.connect(otherAccount).approve(goldenBee.address, "100000000000000000000000000");
+      await goldenBee.batchAddTokenURIs(TestUris);
+      await mine(1);
+      await expect(goldenBee.connect(otherAccount).mintNFT()).not.to.be.reverted;
+      await expect(goldenBee.tokenOfOwnerByIndex(otherAccount.address, 1)).to.be.revertedWith(
+        "ERC721Enumerable: owner index out of bounds"
+      );
+    });
   });
 });

@@ -29,8 +29,6 @@ contract GoldenBee is ERC721Enumerable, ERC2981, ReentrancyGuard, Ownable {
     // mapping token id to token uri
     mapping(uint256 => string) private _tokenURIs;
 
-    event MintNFT(address indexed owner, uint256 indexed tokenId);
-
     constructor(
         string memory name,
         string memory symbol,
@@ -82,6 +80,7 @@ contract GoldenBee is ERC721Enumerable, ERC2981, ReentrancyGuard, Ownable {
         require(IERC20(mfercTokenAddress).balanceOf(msg.sender) >= mintFee, "Insufficient balance");
         require(pendingNFTLength() > 0, "No NFT to mint");
         _tokenIdCounter.increment();
+        require(_tokenIdCounter.current() <= maxSupply, "NFT has been sold out!");
         uint256 tokenId = _tokenIdCounter.current();
         require(
             IERC20(mfercTokenAddress).transferFrom(msg.sender, BlackHole, mintFee),
@@ -95,8 +94,6 @@ contract GoldenBee is ERC721Enumerable, ERC2981, ReentrancyGuard, Ownable {
         _tokenURIs[tokenId] = pendingPics[randomIndex];
         pendingPics[randomIndex] = pendingPics[pendingPics.length - 1];
         pendingPics.pop();
-        
-        emit MintNFT(msg.sender, tokenId);
     }
 
     function pendingNFTLength() public view returns (uint256) {
