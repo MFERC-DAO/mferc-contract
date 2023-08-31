@@ -16,8 +16,6 @@ contract GoldenBee is ERC721Enumerable, ERC2981, ReentrancyGuard, Ownable {
 
     address public mfercTokenAddress; // $MFERC token
     uint256 public mintFee = 1000000 ether; // the price of golden bee
-    address public royaltyReceiver; // Royalty receiver address
-    uint96 public royaltyPercentage = 500; // 5% royalty
     string private _baseTokenURI; // NFT base uri
     address immutable BlackHole = 0x000000000000000000000000000000000000dEaD;
     uint256 public immutable maxSupply = 6666;
@@ -33,13 +31,13 @@ contract GoldenBee is ERC721Enumerable, ERC2981, ReentrancyGuard, Ownable {
         string memory name,
         string memory symbol,
         address _mfercTokenAddress,
-        address _royaltyReceiver,
+        address royaltyReceiver,
         string memory baseTokenURI
     ) ERC721(name, symbol) {
         mfercTokenAddress = _mfercTokenAddress;
-        royaltyReceiver = _royaltyReceiver;
         _baseTokenURI = baseTokenURI;
-        _setDefaultRoyalty(royaltyReceiver, royaltyPercentage);
+        // init royalty percentage to 5%
+        _setDefaultRoyalty(royaltyReceiver, 500);
     }
 
     /**
