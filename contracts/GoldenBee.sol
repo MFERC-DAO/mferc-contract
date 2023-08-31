@@ -20,7 +20,7 @@ contract GoldenBee is ERC721Enumerable, ERC2981, ReentrancyGuard, Ownable {
     uint96 public royaltyPercentage = 500; // 5% royalty
     string private _baseTokenURI; // NFT base uri
     address immutable BlackHole = 0x000000000000000000000000000000000000dEaD;
-    uint256 immutable public maxSupply = 6666;
+    uint256 public immutable maxSupply = 6666;
     // this array stores the pictures uri those not been minted;
     string[] public pendingPics;
     // total burned mferc
@@ -63,27 +63,43 @@ contract GoldenBee is ERC721Enumerable, ERC2981, ReentrancyGuard, Ownable {
     /**
      * @dev get uri of a token id
      * @param tokenId NFT ID
-     * @return 
+     * @return
      */
-    function tokenURI(uint256 tokenId) public view override returns (string memory) {
+    function tokenURI(
+        uint256 tokenId
+    ) public view override returns (string memory) {
         require(_exists(tokenId), "NFT not exists");
-        return bytes(_tokenURIs[tokenId]).length > 0 
-                ? string(abi.encodePacked(_baseTokenURI, _tokenURIs[tokenId])) 
+        return
+            bytes(_tokenURIs[tokenId]).length > 0
+                ? string(abi.encodePacked(_baseTokenURI, _tokenURIs[tokenId]))
                 : _baseTokenURI;
     }
 
-    function setDefaultRoyalty(address receiver, uint96 feeNumerator) public onlyOwner {
+    function setDefaultRoyalty(
+        address receiver,
+        uint96 feeNumerator
+    ) public onlyOwner {
         _setDefaultRoyalty(receiver, feeNumerator);
     }
 
-    function mintNFT() nonReentrant public {
-        require(IERC20(mfercTokenAddress).balanceOf(msg.sender) >= mintFee, "Insufficient balance");
+    function mintNFT() public nonReentrant {
+        require(
+            IERC20(mfercTokenAddress).balanceOf(msg.sender) >= mintFee,
+            "Insufficient balance"
+        );
         require(pendingNFTLength() > 0, "No NFT to mint");
         _tokenIdCounter.increment();
-        require(_tokenIdCounter.current() <= maxSupply, "NFT has been sold out!");
+        require(
+            _tokenIdCounter.current() <= maxSupply,
+            "NFT has been sold out!"
+        );
         uint256 tokenId = _tokenIdCounter.current();
         require(
-            IERC20(mfercTokenAddress).transferFrom(msg.sender, BlackHole, mintFee),
+            IERC20(mfercTokenAddress).transferFrom(
+                msg.sender,
+                BlackHole,
+                mintFee
+            ),
             "Burn MFERC fail"
         );
         _mint(msg.sender, tokenId);
@@ -109,7 +125,9 @@ contract GoldenBee is ERC721Enumerable, ERC2981, ReentrancyGuard, Ownable {
     /**
      * @dev See {IERC165-supportsInterface}.
      */
-    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC2981, ERC721Enumerable) returns (bool) {
+    function supportsInterface(
+        bytes4 interfaceId
+    ) public view virtual override(ERC2981, ERC721Enumerable) returns (bool) {
         return super.supportsInterface(interfaceId);
     }
 }
