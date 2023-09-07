@@ -70,7 +70,7 @@ contract BlackBee is ERC721Enumerable, ERC2981, ReentrancyGuard, Ownable {
         require(tokenId > 0 && tokenId <= maxSupply, "Invalid token id");
         return
             bytes(_baseTokenURI).length > 0
-                ? string(abi.encodePacked(_baseTokenURI, tokenId.toString(), ".json"))
+                ? string(abi.encodePacked(_baseTokenURI, tokenId.toString()))
                 : _baseTokenURI;
     }
 

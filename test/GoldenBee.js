@@ -95,6 +95,7 @@ describe("GoldenBee", function () {
 
         await expect(goldenBee.connect(otherAccount).mintNFT()).not.to.be.reverted;
         await expect(goldenBee.connect(otherAccount).mintNFT()).not.to.be.reverted;
+        expect(await goldenBee.totalBurned()).to.be.equals("2000000000000000000000000");
       })
 
       it("The NFT uri should be shuffle", async function () {
@@ -104,7 +105,7 @@ describe("GoldenBee", function () {
         await goldenBee.batchAddTokenURIs(TestUris);
         await mine(1);
         await expect(goldenBee.connect(otherAccount).mintNFT()).not.to.be.reverted;
-        await mine(241);
+        await mine(242);
         await expect(goldenBee.connect(otherAccount).mintNFT()).not.to.be.reverted;
         await mine(24);
         await expect(goldenBee.connect(otherAccount).mintNFT()).not.to.be.reverted;
@@ -128,7 +129,11 @@ describe("GoldenBee", function () {
 
         await expect(goldenBee.connect(otherAccount).mintNFT()).to.emit(goldenBee, "Transfer")
           .withArgs('0x0000000000000000000000000000000000000000', otherAccount.address, 2);
+
+        await expect(goldenBee.connect(otherAccount).mintNFT()).to.emit(goldenBee, "Minted")
+          .withArgs(otherAccount.address, 3, "test2");
       });
+
     });
   });
 

@@ -20,12 +20,15 @@ contract GoldenBee is ERC721Enumerable, ERC2981, ReentrancyGuard, Ownable {
     address immutable BlackHole = 0x000000000000000000000000000000000000dEaD;
     uint256 public immutable maxSupply = 6666;
     // this array stores the pictures uri those not been minted;
-    string[] public pendingPics;
+    string[] private _pendingPics;
     // total burned mferc
     uint256 public totalBurned;
+    uint256 public maxOwnCount;
 
     // mapping token id to token uri
     mapping(uint256 => string) private _tokenURIs;
+
+    event Minted(address indexed owner, uint256 indexed tokenId, string tokenUri);
 
     constructor(
         string memory name,
@@ -54,7 +57,7 @@ contract GoldenBee is ERC721Enumerable, ERC2981, ReentrancyGuard, Ownable {
      */
     function batchAddTokenURIs(string[] calldata tokenURIs) external onlyOwner {
         for (uint256 i = 0; i < tokenURIs.length; i++) {
-            pendingPics.push(tokenURIs[i]);
+            _pendingPics.push(tokenURIs[i]);
         }
     }
 
@@ -105,13 +108,14 @@ contract GoldenBee is ERC721Enumerable, ERC2981, ReentrancyGuard, Ownable {
 
         // todo set a random bee
         uint256 randomIndex = blockNum() % pendingNFTLength();
-        _tokenURIs[tokenId] = pendingPics[randomIndex];
-        pendingPics[randomIndex] = pendingPics[pendingPics.length - 1];
-        pendingPics.pop();
+        _tokenURIs[tokenId] = _pendingPics[randomIndex];
+        _pendingPics[randomIndex] = _pendingPics[_pendingPics.length - 1];
+        _pendingPics.pop();
+        emit Minted(msg.sender, tokenId, _tokenURIs[tokenId]);
     }
 
     function pendingNFTLength() public view returns (uint256) {
-        return pendingPics.length;
+        return _pendingPics.length;
     }
 
     function blockNum() public view returns (uint256) {

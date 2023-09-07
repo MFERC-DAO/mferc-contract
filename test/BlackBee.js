@@ -123,7 +123,7 @@ describe("BlackBee", function () {
     it("Token uri", async function () {
         const { blackBee } = await loadFixture(deployFixture);
         for (let i of [4,5,7,23,44,56]) {
-            expect(await blackBee.tokenURI(i)).to.be.equals(TestBaseUri + i + ".json");
+            expect(await blackBee.tokenURI(i)).to.be.equals(TestBaseUri + i);
         }
     });
 
