@@ -106,6 +106,47 @@ describe("BlackBee", function () {
                     "Invalid token id"
                 );
             });
+
+            it("Should revert if the white list has expired", async function() {
+                const { mferc, blackBee, owner } = await loadFixture(deployFixture);
+                await mferc.approve(blackBee.address, "10000000000000000000000000000");
+                await blackBee.addToWhitelist([owner.address]);
+                await time.increase(3600 * 24 * 3);
+                await expect(blackBee.mintNFT(1)).to.be.revertedWith(
+                    "The white list has expired"
+                );
+                await blackBee.addToWhitelist([owner.address]);
+                await time.increase(3600 * 24 * 2);
+                await expect(blackBee.mintNFT(1)).not.to.be.reverted;
+            })
+        });
+
+        describe("Mint", function () {
+            it("Should mint when admin change the expiration time", async function() {
+                const { mferc, blackBee, owner } = await loadFixture(deployFixture);
+                await mferc.approve(blackBee.address, "10000000000000000000000000000");
+                await blackBee.addToWhitelist([owner.address]);
+                await time.increase(3600 * 24 * 3);
+                await expect(blackBee.mintNFT(1)).to.be.revertedWith(
+                    "The white list has expired"
+                );
+                
+                await blackBee.updateExpirationDay(4);
+                await expect(blackBee.mintNFT(1)).not.to.be.reverted;
+            });
+
+            it("Should mint when admin update the whitelist", async function () {
+                const { mferc, blackBee, owner } = await loadFixture(deployFixture);
+                await mferc.approve(blackBee.address, "10000000000000000000000000000");
+                await blackBee.addToWhitelist([owner.address]);
+                await time.increase(3600 * 24 * 3);
+                await expect(blackBee.mintNFT(1)).to.be.revertedWith(
+                    "The white list has expired"
+                );
+                
+                await blackBee.addToWhitelist([owner.address]);
+                await expect(blackBee.mintNFT(1)).not.to.be.reverted;
+            })
         });
 
         describe("Events", function () {
@@ -117,8 +158,22 @@ describe("BlackBee", function () {
                 await expect(blackBee.connect(otherAccount).mintNFT(3)).to.emit(blackBee, "Transfer")
                   .withArgs('0x0000000000000000000000000000000000000000', otherAccount.address, 3);
             });
+
+
         });
+
     });
+
+    describe("Ownerable function", function () {
+        it("Set base uri", async function () {
+            const { mferc, blackBee, owner, otherAccount } = await loadFixture(deployFixture);
+            await expect(blackBee.setBaseTokenURI("base url")).not.to.be.reverted;
+      
+            await expect(blackBee.connect(otherAccount).setBaseTokenURI("base url")).to.be.revertedWith(
+              "Ownable: caller is not the owner"
+            );
+          });
+    })
 
     it("Token uri", async function () {
         const { blackBee } = await loadFixture(deployFixture);

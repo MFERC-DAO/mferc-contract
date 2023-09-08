@@ -20,10 +20,17 @@ contract BlackBee is ERC721Enumerable, ERC2981, ReentrancyGuard, Ownable {
     uint256 public immutable maxSupply = 66;
     // total burned mferc
     uint256 public totalBurned;
+    uint256 public whileListExpirationDay = 3 days;
     // mapping whitelist
     mapping(address => bool) public whitelist;
+    // the whitle list update time: the while list will invalid if the update time past the expiration time
+    mapping(address => uint256) public whitelistUpdateTime;
     // mapping hasMintedNFT
     mapping(address => bool) public hasMintedNFT;
+
+    event AddWhiteList(address indexed whitelist);
+    event RemoveWhiteList(address indexed whitelist);
+    event UpdateExpirationDay(uint256 indexed day);
 
     constructor(
         string memory name,
@@ -42,13 +49,22 @@ contract BlackBee is ERC721Enumerable, ERC2981, ReentrancyGuard, Ownable {
     function addToWhitelist(address[] calldata addresses) external onlyOwner {
         for (uint256 i = 0; i < addresses.length; i++) {
             whitelist[addresses[i]] = true;
+            whitelistUpdateTime[addresses[i]] = block.timestamp;
+            emit AddWhiteList(addresses[i]);
         }
     }
 
     function removeFromWhitelist(address[] calldata addresses) external onlyOwner {
         for (uint256 i = 0; i < addresses.length; i++) {
             whitelist[addresses[i]] = false;
+            whitelistUpdateTime[addresses[i]] = 0;
+            emit RemoveWhiteList(addresses[i]);
         }
+    }
+
+    function updateExpirationDay(uint256 day) external onlyOwner {
+        whileListExpirationDay = day * 1 days;
+        emit UpdateExpirationDay(day);
     }
 
     /**
@@ -83,6 +99,7 @@ contract BlackBee is ERC721Enumerable, ERC2981, ReentrancyGuard, Ownable {
 
     function mintNFT(uint256 tokenId) public nonReentrant {
         require(whitelist[msg.sender], "Address not in whitelisted");
+        require(block.timestamp - whitelistUpdateTime[msg.sender] < whileListExpirationDay, "The white list has expired");
         require(!hasMintedNFT[msg.sender], "Already minted a NFT");
         require(tokenId <= maxSupply && tokenId > 0, "Invalid token id");
         require(!_exists(tokenId), "Token has been minted");
