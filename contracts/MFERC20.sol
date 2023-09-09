@@ -9,6 +9,6 @@ contract MFERC20 is ERC20 {
         string memory _name,
         string memory _symbol
     ) ERC20(_name, _symbol) {
-        _mint(msg.sender, 10000000000 ether);
+        _mint(msg.sender, 1000000000000000 ether);
     }
 }
