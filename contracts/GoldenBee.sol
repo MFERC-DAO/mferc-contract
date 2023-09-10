@@ -62,6 +62,14 @@ contract GoldenBee is ERC721Enumerable, ERC2981, ReentrancyGuard, Ownable {
     }
 
     /**
+     * Change the uris if uploaded some wrong uris
+     */
+    function updatePendingURI(uint256 index, string memory newURI) external onlyOwner() {
+        require(index < _pendingPics.length && index > 0, "Invalid index");
+        _pendingPics[index] = newURI;
+    }
+
+    /**
      * @dev get uri of a token id
      * @param tokenId NFT ID
      * @return
@@ -106,7 +114,7 @@ contract GoldenBee is ERC721Enumerable, ERC2981, ReentrancyGuard, Ownable {
         _mint(msg.sender, tokenId);
         totalBurned += mintFee;
 
-        // todo set a random bee
+        // set a random bee
         uint256 randomIndex = blockNum() % pendingNFTLength();
         _tokenURIs[tokenId] = _pendingPics[randomIndex];
         _pendingPics[randomIndex] = _pendingPics[_pendingPics.length - 1];
@@ -119,8 +127,7 @@ contract GoldenBee is ERC721Enumerable, ERC2981, ReentrancyGuard, Ownable {
     }
 
     function blockNum() public view returns (uint256) {
-        // for test
-        return block.number;
+        // return block.number;
         return IArbSys(address(100)).arbBlockNumber();
     }
 

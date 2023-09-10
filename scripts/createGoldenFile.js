@@ -1008,7 +1008,6 @@ async function main() {
     let i = 1;
     for (let item of json) {
         console.log(i)
-        // item.name = item.name + ' #' + i
         fs.writeFileSync('./nfts/golden/' + i, JSON.stringify(item), { encoding: "utf-8" });
         i++;
     }

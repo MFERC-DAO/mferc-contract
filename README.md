@@ -16,3 +16,6 @@ with ```node```/```hardhat``` installed.
 ### Run Tests
 
 `npx hardhat test`
+
+### Deploy Contracts
+`npx hardhat run --network arbitrum scripts/deploy.js`

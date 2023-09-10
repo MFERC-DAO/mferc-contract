@@ -146,6 +146,14 @@ describe("BlackBee", function () {
                 
                 await blackBee.addToWhitelist([owner.address]);
                 await expect(blackBee.mintNFT(1)).not.to.be.reverted;
+            });
+
+            it("Should return right index of token", async function () {
+                const { mferc, blackBee, owner } = await loadFixture(deployFixture);
+                await mferc.approve(blackBee.address, "10000000000000000000000000000");
+                await blackBee.addToWhitelist([owner.address]);
+                await blackBee.mintNFT(10);
+                expect(await blackBee.tokenByIndex(0)).to.be.equals(10);
             })
         });
 
