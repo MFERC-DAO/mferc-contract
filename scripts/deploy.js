@@ -2,7 +2,7 @@
 const { ethers } = require("hardhat");
 const royaltyRecipient = '0xA4b5936fCdab2553103960027bCF01Aac5ebc74F';
 let mferc = '0xB4ee30dE6BF7e8F9eFBFcC9715021144DEFDe96F';
-let bbUrl = 'https://gateway.nutbox.app/ipns/k51qzi5uqu5dlep4q5te5cs4yxhco1ekfdgeuk4ppwidy3e5l5csgfoqdga96k/'; // for test
+let bbUrl = 'https://gateway.nutbox.app/ipns/k51qzi5uqu5dlep4q5te5cs4yxhco1ekfdgeuk4ppwidy3e5l5csgfoqdga96k/'; // product
 let gbUrl = 'https://gateway.nutbox.app/ipns/k51qzi5uqu5dil44fz8dwqh84boop5moe5qojmifrx2036p7vloi2wmum7y68w/'; // product
 let whitelist = [
   '0xaeFBC310c7c1559CA6C20A563A0dd9059Bc94A99',
@@ -12,9 +12,9 @@ let whitelist = [
 ]
 
 // test contract
-mferc = '0xDB78c8B524Aa2D836Cb8C2868Be01A14b7E13863';
-let MCO = '0x7Bc2E3A31Cb25A4E0CbA7E12E651e617e43198e3';
-let MCM = '0xa4f1bfDF8da3C0A9007C3DD132f4E922d602339E';
+// mferc = '0xDB78c8B524Aa2D836Cb8C2868Be01A14b7E13863';
+// let MCO = '0x7Bc2E3A31Cb25A4E0CbA7E12E651e617e43198e3';
+// let MCM = '0xa4f1bfDF8da3C0A9007C3DD132f4E922d602339E';
 
 async function deployTestMferc() {
   const factory = await ethers.getContractFactory("MFERC20");
@@ -42,12 +42,12 @@ async function deployGoldenBee() {
   const contract = await factory.deploy("Mferc Community Member", "MCM", mferc, royaltyRecipient, gbUrl);
   await contract.deployed();
   console.log('✓ Golden bee contract deployed', contract.address);
-  await contract.batchAddTokenURIs((new Array(30).fill(1)).map((item, i) => (i+1).toString()));
+  await contract.batchAddTokenURIs((new Array(200).fill(1)).map((item, i) => (i+1).toString()));
   return contract.address;
 }
 
 async function main() {
-  await deployTestMferc();
+  // await deployTestMferc();
   await deployBlackBee();
   await deployGoldenBee();
 }
