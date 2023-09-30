@@ -20,6 +20,7 @@ contract BlackBee is ERC721Enumerable, ERC2981, ReentrancyGuard, Ownable {
     uint256 public immutable maxSupply = 66;
     // total burned mferc
     uint256 public totalBurned;
+    uint256 public pendingBurnAmount;
     uint256 public whileListExpirationDay = 3 days;
     // mapping whitelist
     mapping(address => bool) public whitelist;
@@ -31,6 +32,7 @@ contract BlackBee is ERC721Enumerable, ERC2981, ReentrancyGuard, Ownable {
     event AddWhiteList(address indexed whitelist);
     event RemoveWhiteList(address indexed whitelist);
     event UpdateExpirationDay(uint256 indexed day);
+    event BurnMFERC(uint256 indexed amount);
 
     constructor(
         string memory name,
@@ -97,6 +99,20 @@ contract BlackBee is ERC721Enumerable, ERC2981, ReentrancyGuard, Ownable {
         _setDefaultRoyalty(receiver, feeNumerator);
     }
 
+    function adminBurnToken() public onlyOwner {
+        require(pendingBurnAmount > 0, "No mferc to burn");
+        require(
+            IERC20(mfercTokenAddress).transfer(
+                BlackHole,
+                pendingBurnAmount
+            ),
+            "Burn MFERC fail"
+        );
+        totalBurned = totalBurned + pendingBurnAmount;
+        emit BurnMFERC(pendingBurnAmount);
+        pendingBurnAmount = 0;
+    }
+
     function mintNFT(uint256 tokenId) public nonReentrant {
         require(whitelist[msg.sender], "Address not in whitelisted");
         require(block.timestamp - whitelistUpdateTime[msg.sender] < whileListExpirationDay, "The white list has expired");
@@ -112,13 +128,13 @@ contract BlackBee is ERC721Enumerable, ERC2981, ReentrancyGuard, Ownable {
         require(
             IERC20(mfercTokenAddress).transferFrom(
                 msg.sender,
-                BlackHole,
+                address(this),
                 mintFee
             ),
-            "Burn MFERC fail"
+            "Cost MFERC fail"
         );
         _mint(msg.sender, tokenId);
-        totalBurned += mintFee;
+        pendingBurnAmount += mintFee;
         
         hasMintedNFT[msg.sender] = true;
     }

@@ -11,7 +11,7 @@ const TestBaseUri = "https://test/";
 describe("BlackBee", function () {
     async function deployFixture() {
         // Contracts are deployed using the first signer/account by default
-        const [owner, otherAccount, royaltyReceiver] = await ethers.getSigners();
+        const [owner, otherAccount, royaltyReceiver, alice, bob] = await ethers.getSigners();
 
         // deploy mferc
         const MFERC = await ethers.getContractFactory('MFERC20');
@@ -19,7 +19,7 @@ describe("BlackBee", function () {
         const BlackBee = await ethers.getContractFactory("BlackBee");
         const blackBee = await BlackBee.deploy("GoldenBee", "BB", mferc.address, royaltyReceiver.address, TestBaseUri);
 
-        return { mferc, blackBee, owner, otherAccount, royaltyReceiver };
+        return { mferc, blackBee, owner, otherAccount, royaltyReceiver, alice, bob };
     }
 
     describe("Deployment", function () {
@@ -166,8 +166,6 @@ describe("BlackBee", function () {
                 await expect(blackBee.connect(otherAccount).mintNFT(3)).to.emit(blackBee, "Transfer")
                   .withArgs('0x0000000000000000000000000000000000000000', otherAccount.address, 3);
             });
-
-
         });
 
     });
@@ -181,6 +179,32 @@ describe("BlackBee", function () {
               "Ownable: caller is not the owner"
             );
           });
+
+        it("Admin can burn mferc from this contract, and the variable always shows correct", async function() {
+            const { mferc, blackBee, owner, otherAccount, alice, bob } = await loadFixture(deployFixture);
+            await mferc.transfer(otherAccount.address, "20000000000000000000000000");
+            await mferc.transfer(alice.address, "20000000000000000000000000");
+            await mferc.transfer(bob.address, "20000000000000000000000000");
+            await blackBee.addToWhitelist([alice.address, otherAccount.address, bob.address]);
+            await mferc.connect(otherAccount).approve(blackBee.address, "100000000000000000000000000000");
+            await mferc.connect(alice).approve(blackBee.address, "100000000000000000000000000000");
+            await mferc.connect(bob).approve(blackBee.address, "100000000000000000000000000000");
+            await expect(blackBee.connect(alice).mintNFT(3)).changeTokenBalance(mferc, alice, "-20000000000000000000000000");
+            expect(await blackBee.totalBurned()).to.be.equals(0);
+            expect(await blackBee.pendingBurnAmount()).to.be.equals("20000000000000000000000000");
+            await expect(blackBee.connect(bob).mintNFT(5)).changeTokenBalance(mferc, bob, "-20000000000000000000000000");
+            expect(await blackBee.totalBurned()).to.be.equals(0);
+            expect(await blackBee.pendingBurnAmount()).to.be.equals("40000000000000000000000000");
+            await blackBee.adminBurnToken();
+            expect(await blackBee.totalBurned()).to.be.equals("40000000000000000000000000");
+            expect(await blackBee.pendingBurnAmount()).to.be.equals("0");
+            await expect(blackBee.connect(otherAccount).mintNFT(7)).changeTokenBalance(mferc, otherAccount, "-20000000000000000000000000");
+            expect(await blackBee.totalBurned()).to.be.equals("40000000000000000000000000");
+            expect(await blackBee.pendingBurnAmount()).to.be.equals("20000000000000000000000000");
+            await blackBee.adminBurnToken();
+            expect(await blackBee.totalBurned()).to.be.equals("60000000000000000000000000");
+            expect(await blackBee.pendingBurnAmount()).to.be.equals("0");
+        })
     })
 
     it("Token uri", async function () {

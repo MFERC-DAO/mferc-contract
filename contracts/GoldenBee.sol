@@ -23,12 +23,14 @@ contract GoldenBee is ERC721Enumerable, ERC2981, ReentrancyGuard, Ownable {
     string[] private _pendingPics;
     // total burned mferc
     uint256 public totalBurned;
+    uint256 public pendingBurnAmount;
     uint256 public maxOwnCount;
 
     // mapping token id to token uri
     mapping(uint256 => string) private _tokenURIs;
 
     event Minted(address indexed owner, uint256 indexed tokenId, string tokenUri);
+    event BurnMFERC(uint256 indexed amount);
 
     constructor(
         string memory name,
@@ -91,6 +93,20 @@ contract GoldenBee is ERC721Enumerable, ERC2981, ReentrancyGuard, Ownable {
         _setDefaultRoyalty(receiver, feeNumerator);
     }
 
+    function adminBurnToken() public onlyOwner {
+        require(pendingBurnAmount > 0, "No mferc to burn");
+        require(
+            IERC20(mfercTokenAddress).transfer(
+                BlackHole,
+                pendingBurnAmount
+            ),
+            "Burn MFERC fail"
+        );
+        totalBurned = totalBurned + pendingBurnAmount;
+        emit BurnMFERC(pendingBurnAmount);
+        pendingBurnAmount = 0;
+    }
+
     function mintNFT() public nonReentrant {
         require(
             IERC20(mfercTokenAddress).balanceOf(msg.sender) >= mintFee,
@@ -106,13 +122,13 @@ contract GoldenBee is ERC721Enumerable, ERC2981, ReentrancyGuard, Ownable {
         require(
             IERC20(mfercTokenAddress).transferFrom(
                 msg.sender,
-                BlackHole,
+                address(this),
                 mintFee
             ),
-            "Burn MFERC fail"
+            "Cost MFERC fail"
         );
         _mint(msg.sender, tokenId);
-        totalBurned += mintFee;
+        pendingBurnAmount += mintFee;
 
         // set a random bee
         uint256 randomIndex = blockNum() % pendingNFTLength();
@@ -127,8 +143,8 @@ contract GoldenBee is ERC721Enumerable, ERC2981, ReentrancyGuard, Ownable {
     }
 
     function blockNum() public view returns (uint256) {
-        // return block.number;
-        return IArbSys(address(100)).arbBlockNumber();
+        return block.number;
+        // return IArbSys(address(100)).arbBlockNumber();
     }
 
     /**

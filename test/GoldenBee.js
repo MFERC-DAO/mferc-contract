@@ -95,7 +95,12 @@ describe("GoldenBee", function () {
 
         await expect(goldenBee.connect(otherAccount).mintNFT()).not.to.be.reverted;
         await expect(goldenBee.connect(otherAccount).mintNFT()).not.to.be.reverted;
+        expect(await goldenBee.totalBurned()).to.be.equals("0");
+        expect(await goldenBee.pendingBurnAmount()).to.be.equals("2000000000000000000000000");
+        await goldenBee.adminBurnToken();
+
         expect(await goldenBee.totalBurned()).to.be.equals("2000000000000000000000000");
+        expect(await goldenBee.pendingBurnAmount()).to.be.equals("0");
       })
 
       it("The NFT uri should be shuffle", async function () {
