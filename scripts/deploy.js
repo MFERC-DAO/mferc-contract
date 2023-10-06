@@ -1,6 +1,6 @@
 
 const { ethers } = require("hardhat");
-const royaltyRecipient = '0xA4b5936fCdab2553103960027bCF01Aac5ebc74F';
+const royaltyRecipient = '0x3b5BBA2a73d1f8814e6d1D14Cbed01dBB830CfeC';
 let mferc = '0xB4ee30dE6BF7e8F9eFBFcC9715021144DEFDe96F';
 let bbUrl = 'https://gateway.nutbox.app/ipns/k51qzi5uqu5dlep4q5te5cs4yxhco1ekfdgeuk4ppwidy3e5l5csgfoqdga96k/'; // product
 let gbUrl = 'https://gateway.nutbox.app/ipns/k51qzi5uqu5dil44fz8dwqh84boop5moe5qojmifrx2036p7vloi2wmum7y68w/'; // product
@@ -33,7 +33,7 @@ async function deployBlackBee() {
   const contract = await factory.deploy("Mferc Community OG", 'MCO', mferc, royaltyRecipient, bbUrl);
   await contract.deployed();
   console.log('✓ Black bee contract deployed', contract.address);
-  await contract.addToWhitelist(whitelist);
+  // await contract.addToWhitelist(whitelist);
   return contract.address;
 }
 

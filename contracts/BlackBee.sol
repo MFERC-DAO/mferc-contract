@@ -47,7 +47,6 @@ contract BlackBee is ERC721Enumerable, ERC2981, ReentrancyGuard, Ownable {
         _setDefaultRoyalty(royaltyReceiver, 500);
     }
 
- 
     function addToWhitelist(address[] calldata addresses) external onlyOwner {
         for (uint256 i = 0; i < addresses.length; i++) {
             whitelist[addresses[i]] = true;

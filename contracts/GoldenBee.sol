@@ -71,6 +71,10 @@ contract GoldenBee is ERC721Enumerable, ERC2981, ReentrancyGuard, Ownable {
         _pendingPics[index] = newURI;
     }
 
+    function getPendingURI(uint256 index) public view returns (string memory) {
+        return _pendingPics[index];
+    }
+
     /**
      * @dev get uri of a token id
      * @param tokenId NFT ID
@@ -143,8 +147,7 @@ contract GoldenBee is ERC721Enumerable, ERC2981, ReentrancyGuard, Ownable {
     }
 
     function blockNum() public view returns (uint256) {
-        return block.number;
-        // return IArbSys(address(100)).arbBlockNumber();
+        return IArbSys(address(100)).arbBlockNumber();
     }
 
     /**
